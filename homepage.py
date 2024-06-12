@@ -80,8 +80,8 @@ site_instance = wind_power_plant(wtg_data=raw_data,
 
 # theory_pw_cur = pd.read_excel(pw_cur_path)
 st.markdown('# 查看原始数据')
-st.write('wtg_data')
-st.write(site_instance.wtg_data)
+# st.write('wtg_data')
+# st.write(site_instance.wtg_data)
 
 st.write('wtg_data Describe')
 st.write(site_instance.wtg_data.describe())

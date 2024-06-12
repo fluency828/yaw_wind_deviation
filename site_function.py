@@ -166,7 +166,7 @@ class wind_power_plant():
         # 功率大于满发功率的工况
         self.wtg_data_1min['working_condition'] = np.where((self.wtg_data_1min[self.P_pn]>=self.rated_power)&\
                                                            (self.wtg_data_1min['working_condition'] == 'normal power'),\
-                                                            f'2 gen_power>{self.rated_power}',\
+                                                            f'2 gen_power>={self.rated_power}',\
                                                             self.wtg_data_1min['working_condition'])
         # 桨叶角度大于30的工况
         self.wtg_data_1min['working_condition'] = np.where((self.wtg_data_1min[self.blade_pn]>30)&\
