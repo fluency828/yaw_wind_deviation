@@ -28,21 +28,35 @@ plt.rcParams['axes.unicode_minus'] = False
 ########################## 正式开始网页！###################
 
 st.title('偏航对风偏差预警 通用调参工具')
-wtg_pn = st.sidebar.text_input("请输入风机号测点名称",'device_name')
-time_pn = st.sidebar.text_input("请输入时间测点名称",'timestamp_utc')
-w_pn = st.sidebar.text_input("请输入风速测点名称",'windspeed')
-yaw_angle_pn = st.sidebar.text_input("请输入机舱与风向夹角测点名称","ai00048")
-P_pn = st.sidebar.text_input("请输入有功功率测点名称",'genactivepw')
-temp_pn = st.sidebar.text_input("请输入机舱温度测点名称",'temout')
-wd_pn = st.sidebar.text_input("请输入风向测点名称",'winddirection')
-genspd_pn = st.sidebar.text_input("请输入发电机转速测点名称",'genspd')
-blade1_pn = st.sidebar.text_input("请输入桨叶1测点名称",'blade1position')
-blade2_pn = st.sidebar.text_input("请输入桨叶2测点名称",'blade2position')
-blade3_pn = st.sidebar.text_input("请输入桨叶3测点名称",'blade3position')
-blade_pn = st.sidebar.text_input("请输入桨叶平均测点名称",'blade_average')
-Cp_pn = st.sidebar.text_input("请输入功率系数测点名称",'CP')
+phase_name = st.sidebar.selectbox('请选择风场名',['元山一期','昆头岭二期'])
+if phase_name == '元山一期':
+    wtg_pn = st.sidebar.text_input("请输入风机号测点名称",'device_name')
+    time_pn = st.sidebar.text_input("请输入时间测点名称",'timestamp_utc')
+    w_pn = st.sidebar.text_input("请输入风速测点名称",'windspeed')
+    yaw_angle_pn = st.sidebar.text_input("请输入机舱与风向夹角测点名称","ai00048")
+    P_pn = st.sidebar.text_input("请输入有功功率测点名称",'genactivepw')
+    # temp_pn = st.sidebar.text_input("请输入机舱温度测点名称",'temout')
+    # wd_pn = st.sidebar.text_input("请输入风向测点名称",'winddirection')
+    # genspd_pn = st.sidebar.text_input("请输入发电机转速测点名称",'genspd')
+    blade1_pn = st.sidebar.text_input("请输入桨叶1测点名称",'blade1position')
+    blade2_pn = st.sidebar.text_input("请输入桨叶2测点名称",'blade2position')
+    blade3_pn = st.sidebar.text_input("请输入桨叶3测点名称",'blade3position')
+    rated_power =  float(st.sidebar.text_input("请输入额定功率",2100))
+    # blade_pn = st.sidebar.text_input("请输入桨叶平均测点名称",'blade_average')
+    # Cp_pn = st.sidebar.text_input("请输入功率系数测点名称",'CP')
+elif phase_name == '昆头岭二期':
+    wtg_pn = st.sidebar.text_input("请输入风机号测点名称",'k_device')
+    time_pn = st.sidebar.text_input("请输入时间测点名称",'k_ts')
+    w_pn = st.sidebar.text_input("请输入风速测点名称",'WNAC.WindSpeed')
+    yaw_angle_pn = st.sidebar.text_input("请输入机舱与风向夹角测点名称","WNAC.WindVaneDirection")
+    P_pn = st.sidebar.text_input("请输入有功功率测点名称",'WGEN.GenActivePW')
+    blade1_pn = st.sidebar.text_input("请输入桨叶1测点名称",'WROT.Blade1Position')
+    blade2_pn = st.sidebar.text_input("请输入桨叶2测点名称",'WROT.Blade2Position')
+    blade3_pn = st.sidebar.text_input("请输入桨叶3测点名称",'WROT.Blade3Position')   
+    rated_power =  float(st.sidebar.text_input("请输入额定功率",2500))
+
 group_by = st.sidebar.selectbox('选择是否按分钟聚合数据',[True,False])
-rated_power =  float(st.sidebar.text_input("请输入额定功率",2500))
+
 
 raw_data_path = st.file_uploader('上传原始数据(单个风机的秒级数据)')
 # pw_cur_path = st.file_uploader('上传理论功率数据（包含机型）')
@@ -67,9 +81,9 @@ site_instance = wind_power_plant(wtg_data=raw_data,
                                  w_pn=w_pn,
                                  yaw_angle_pn=yaw_angle_pn,
                                  P_pn=P_pn,
-                                 temp_pn=temp_pn,
-                                 wd_pn=wd_pn,
-                                 genspd_pn=genspd_pn,
+                                #  temp_pn=temp_pn,
+                                #  wd_pn=wd_pn,
+                                #  genspd_pn=genspd_pn,
                                  blade1_pn=blade1_pn,
                                  blade2_pn=blade2_pn,
                                  blade3_pn=blade3_pn,
@@ -85,9 +99,15 @@ st.markdown('# 查看原始数据')
 
 st.write('wtg_data Describe')
 st.write(site_instance.wtg_data.describe())
-
+st.write('风频分布图')
+st.pyplot(site_instance.check_hist(site_instance.wtg_data,pn=site_instance.w_pn))
+st.write('偏航角度分布图')
+st.pyplot(site_instance.check_hist(site_instance.wtg_data,pn=site_instance.yaw_angle_pn))
+yaw_angle_method = st.selectbox('请选择偏航角度分布情况：',['分布在[-180,180],集中在0','分布在[0,360],集中在180'])
+site_instance.process_yaw_angle(method=yaw_angle_method)
+st.pyplot(site_instance.check_hist(site_instance.wtg_data,pn=site_instance.yaw_angle_pn))
 st.write('month list')
-least_amount = st.slider('选择每个月最少的数据量',0,2000,100,1600)
+least_amount = st.slider('选择每个月最少的数据量',0,2000,1600,100)
 site_instance._get_month_list(least_amount)
 if group_by:
     site_instance._groupby_minutes()
@@ -174,17 +194,18 @@ site_instance.clean_data(difference=if_diff,
                          sigma_times=sigma_times ,
                          Cp=if_Cp,
                          Cp_thre=[eval(Cp_lo),eval(Cp_up)])
+# st.write(site_instance.wtg_use)
 st.pyplot(site_instance._check_month_plot(site_instance.wtg_normal_power,'nan_marker'))
 st.markdown('# 对风偏差拟合')
 columns = st.columns(4)
 with columns[0]:
-    least_samples =  st.slider('最小样本数量',1000,3000,1500,500)
+    least_samples =  st.slider('最小样本数量',0,3000,1500,500)
 with columns[1]:
     angle_lo = eval(st.text_input('最小角度',-30,))
 with columns[2]:
     angle_up = eval(st.text_input('最大角度',30,))
 with columns[3]:
-    bin_length = eval(st.text_input('bin区间大小',0.5,))
+    bin_length = eval(st.text_input('风速bin区间大小',0.5,))
 site_instance.drop_yaw_outlier(yaw_angle_lo=angle_lo,yaw_angle_hi=angle_up)
 site_instance._divide_float_to_bin(bin_len=bin_length)
 columns = st.columns(2)
@@ -198,11 +219,13 @@ with columns[0]:
 with columns[1]:
     bwidth = st.selectbox('Bandwidth selection method in kernel density',['hsheather','bofinger','chamberlain'])
 
-columns = st.columns(2)
+columns = st.columns(3)
 with columns[0]:
     max_iter = eval(st.text_input('最大迭代次数',5000,))
 with columns[1]:
     tolerance = eval(st.text_input('tolerance',1e-6,))
+with columns[2]:
+    if_rectify = st.selectbox('是否风速校正',[True,False])
 
 figure_list,table = site_instance.quantreg(least_samples,
                                            q,
@@ -210,7 +233,8 @@ figure_list,table = site_instance.quantreg(least_samples,
                                            kernel,
                                            bwidth,
                                            max_iter,
-                                           tolerance)
+                                           tolerance,
+                                           if_rectify=if_rectify)
 # col_ls = st.columns(4)
 for i,figs in enumerate(figure_list):
     # with col_ls[i%4]:

@@ -12,7 +12,7 @@ import matplotlib as mpl
 from matplotlib import rcParams
 import sys
 sys.path.append('D:/OneDrive - CUHK-Shenzhen/utils/')
-from xintian.power_limited import limit_power_detect_loc
+# from xintian.power_limited import limit_power_detect_loc
 
 
 mpl.font_manager.fontManager.addfont('D:/1 新天\数字运营部 任务\字体/SIMSUN.ttf')

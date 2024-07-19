@@ -23,9 +23,9 @@ class wind_power_plant():
                 w_pn = 'windspeed',
                 yaw_angle_pn = 'ai00048',
                 P_pn = 'genactivepw',
-                temp_pn = 'temout',
-                wd_pn = 'winddirection',
-                genspd_pn = 'genspd',
+                # temp_pn = 'temout',
+                # wd_pn = 'winddirection',
+                # genspd_pn = 'genspd',
                 blade1_pn = 'blade1position',
                 blade2_pn = 'blade2position',
                 blade3_pn = 'blade3position',
@@ -37,11 +37,11 @@ class wind_power_plant():
                 ) -> None:
         blade_pn_list = [blade1_pn,blade2_pn,blade3_pn] if three_blade_pn else [blade1_pn]
         wtg_data = wtg_data[[wtg_pn,time_pn,w_pn,yaw_angle_pn,\
-                            P_pn,genspd_pn,\
+                            P_pn,\
                             ]+blade_pn_list]
         wtg_data = wtg_data.replace({'\\N':np.NaN})
         for column in [w_pn,yaw_angle_pn,\
-                        P_pn,genspd_pn,\
+                        P_pn,\
                         ]+blade_pn_list:
             wtg_data[column] = wtg_data[column].astype(float)
         self.wtg_data = wtg_data
@@ -56,7 +56,7 @@ class wind_power_plant():
         self.P_pn = P_pn
         # self.temp_pn = temp_pn
         # self.wd_pn = wd_pn
-        self.genspd_pn = genspd_pn
+        # self.genspd_pn = genspd_pn
         self.blade1_pn = blade1_pn
         self.blade2_pn = blade2_pn
         self.blade3_pn = blade3_pn
@@ -74,6 +74,14 @@ class wind_power_plant():
         # else:
         #     self.wtg_data_1min = self.wtg_data
     
+    def process_yaw_angle(self,method=None):
+        if method is None or method == '分布在[-180,180],集中在0':
+            return
+        elif method=='分布在[0,360],集中在180':
+            self.wtg_data[self.yaw_angle_pn] = self.wtg_data[self.yaw_angle_pn]-180
+        else:
+            print('不知名方法')
+        return
 
     def _get_month_list(self,least_data=100):
         self.wtg_data[self.month_pn] = self.wtg_data[self.time_pn].dt.month + self.wtg_data[self.time_pn].dt.year*100
@@ -88,6 +96,9 @@ class wind_power_plant():
     def _check_month_plot(self,data,flag_pn=None):
         nrows = math.ceil(len(self.month_list)/3)
         fig,axes = plt.subplots(nrows,3,figsize = (30,20))
+        if len(self.month_list)==1:
+            axes = [axes]
+        # print(axes)
         if flag_pn:
             flag_list = np.unique(data[flag_pn])
             for i,m_info in self.month_list.iterrows():
@@ -113,9 +124,21 @@ class wind_power_plant():
         plt.close()
         return fig 
     
+    def check_hist(self,
+                    data,
+                    pn,
+                    bs=600,
+                    ):
+        fig,axes = plt.subplots(figsize = (15,8))
+        axes.hist(x=data[pn],bins=bs)
+        axes.set_xlabel(pn)
+        plt.close()
+        return fig
+
     def _groupby_minutes(self,) -> list:
         self.wtg_data_1min = self.wtg_data.set_index(self.time_pn).groupby(self.wtg_pn).resample(rule='1T').mean().reset_index()
         self.wtg_data_1min = self.wtg_data_1min.loc[~self.wtg_data_1min['month'].isnull(),:].reset_index(drop=True)
+        self.wtg_data_1min = self.wtg_data_1min.sort_values(by=[self.wtg_pn,self.time_pn]).reset_index(drop=True)
         # print('聚合后数据',self.wtg_data_1min.shape)
 
     def show_na(self,data):
@@ -281,8 +304,10 @@ class wind_power_plant():
 
     def drop_yaw_outlier(self,yaw_angle_lo = -30,
                          yaw_angle_hi=30):
+        print(f'wtg_use data {self.wtg_use.shape}')
         self.wtg_use = self.wtg_use[self.wtg_use[self.yaw_angle_pn] <= yaw_angle_hi].reset_index(drop=True)
         self.wtg_use = self.wtg_use[self.wtg_use[self.yaw_angle_pn] >= yaw_angle_lo].reset_index(drop=True)
+        # print(f'wtg_use data {self.wtg_use.shape}')
         return
         
     
@@ -293,31 +318,44 @@ class wind_power_plant():
                  kernel = 'epa',
                  bwidth ='hsheather',
                  max_iter = 5000,
-                 tolerance = 1e-6
+                 tolerance = 1e-6,
+                 if_rectify = True,
                  ):
         h_list = []
         m_list = []
         fig_list = []
+        # print(f'wtg_use data {self.wtg_use.shape}')
         for i,m_info in self.month_list.iterrows():
-            if i==0:
-                continue
-            m2 = m_info[self.month_pn]
-            m1 = self.month_list.loc[i-1,self.month_pn]
-            m_data =  self.wtg_use[(self.wtg_use['month']==m1)|(self.wtg_use['month']==m2)].reset_index(drop=True)
-            print(f'{m1},{m2}月数据大小为{m_data.shape}')
-            if m_data.shape[0]==0:
-                continue
+            if len(self.month_list)>1:
+                if i==0:
+                    continue
+                m2 = m_info[self.month_pn]
+                m1 = self.month_list.loc[i-1,self.month_pn]
+                m_data =  self.wtg_use[(self.wtg_use['month']==m1)|(self.wtg_use['month']==m2)].reset_index(drop=True)
+                title = f'{m1},{m2}月'
+                print(f'{m1},{m2}月数据大小为{m_data.shape}')
+                if m_data.shape[0]==0:
+                    continue
+                m_list.append(f'{m1},{m2}月')
+            elif len(self.month_list)==1:
+                month =m_info[self.month_pn]
+                m_data = self.wtg_use
+                m_list.append(f'{month}月')
+                title = f'{month}月'
             nrows = math.ceil(len(self.ls_use)/3)
             # print(nrows)
             fig,axes = plt.subplots(nrows,3,figsize = (20,nrows*5+2))
             mh_list = []
-            m_list.append(f'{m1},{m2}月')
+            
             for i,v in enumerate(self.ls_use):
                 v_data = m_data[m_data['wind_bin']==v].reset_index(drop=True)
+                print(f'v={v},vdata{m_data.shape}{v_data.shape}')
+                if if_rectify:
+                    v_data['rectify_Power'] = (v/v_data[self.w_pn])**3*v_data[self.P_pn]
                 # print(f'数据大小为{v_data.shape}')
                 v_data['x1'] = v_data[self.yaw_angle_pn]
                 v_data['x2'] = v_data[self.yaw_angle_pn]**2
-                v_data['y'] = v_data[self.P_pn]
+                v_data['y'] = v_data['rectify_Power'] if if_rectify else v_data[self.P_pn] 
                 X = v_data[['x1','x2']]
                 y = v_data['y']
                 # constraints = 'b2 < 0'
@@ -333,7 +371,7 @@ class wind_power_plant():
                 p1 = res.params[1]
                 p2 = res.params[2]
                 h = -p1/(2*p2)
-                axes[i//3][i%3].scatter(x=v_data[self.yaw_angle_pn],y=v_data[self.P_pn],s=5)
+                axes[i//3][i%3].scatter(x=v_data['x1'],y=v_data['y'],s=5)
                 
                 axes[i//3][i%3].set_title(f'{v}m/s 极值点{round(h,2)} \n数据量{v_data.shape[0]},a={round(p2,4)}',\
                             fontsize=20)
@@ -348,7 +386,7 @@ class wind_power_plant():
                     mh_list.append(np.NaN)
                 # print(mh_list)
             h_list.append(mh_list)
-            fig.suptitle(f'{m1},{m2}月',fontsize=20)
+            fig.suptitle(title,fontsize=20)
             plt.tight_layout()
             fig_list.append(fig)
             
