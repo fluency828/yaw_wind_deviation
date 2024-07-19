@@ -28,8 +28,8 @@ plt.rcParams['axes.unicode_minus'] = False
 ########################## 正式开始网页！###################
 
 st.title('偏航对风偏差预警 通用调参工具')
-phase_name = st.sidebar.selectbox('请选择风场名',['元山一期','昆头岭二期'])
-if phase_name == '元山一期':
+phase_name = st.sidebar.selectbox('请选择风场名',['元山一期（昆仑导出）','元山一期(平台导出)','昆头岭二期'])
+if phase_name == '元山一期(平台导出)':
     wtg_pn = st.sidebar.text_input("请输入风机号测点名称",'device_name')
     time_pn = st.sidebar.text_input("请输入时间测点名称",'timestamp_utc')
     w_pn = st.sidebar.text_input("请输入风速测点名称",'windspeed')
@@ -44,6 +44,16 @@ if phase_name == '元山一期':
     rated_power =  float(st.sidebar.text_input("请输入额定功率",2100))
     # blade_pn = st.sidebar.text_input("请输入桨叶平均测点名称",'blade_average')
     # Cp_pn = st.sidebar.text_input("请输入功率系数测点名称",'CP')
+elif phase_name == '元山一期（昆仑导出）':
+    wtg_pn = st.sidebar.text_input("请输入风机号测点名称",'k_device')
+    time_pn = st.sidebar.text_input("请输入时间测点名称",'k_ts')
+    w_pn = st.sidebar.text_input("请输入风速测点名称",'WNAC.WindSpeed')
+    yaw_angle_pn = st.sidebar.text_input("请输入机舱与风向夹角测点名称","WNAC.WindVaneDirection")
+    P_pn = st.sidebar.text_input("请输入有功功率测点名称",'WGEN.GenActivePW')
+    blade1_pn = st.sidebar.text_input("请输入桨叶1测点名称",'WROT.Blade1Position')
+    blade2_pn = st.sidebar.text_input("请输入桨叶2测点名称",'WROT.Blade2Position')
+    blade3_pn = st.sidebar.text_input("请输入桨叶3测点名称",'WROT.Blade3Position')   
+    rated_power =  float(st.sidebar.text_input("请输入额定功率",2100))
 elif phase_name == '昆头岭二期':
     wtg_pn = st.sidebar.text_input("请输入风机号测点名称",'k_device')
     time_pn = st.sidebar.text_input("请输入时间测点名称",'k_ts')
@@ -102,7 +112,7 @@ st.write(site_instance.wtg_data.describe())
 st.write('风频分布图')
 st.pyplot(site_instance.check_hist(site_instance.wtg_data,pn=site_instance.w_pn))
 st.write('偏航角度分布图')
-st.pyplot(site_instance.check_hist(site_instance.wtg_data,pn=site_instance.yaw_angle_pn))
+# st.pyplot(site_instance.check_hist(site_instance.wtg_data,pn=site_instance.yaw_angle_pn))
 yaw_angle_method = st.selectbox('请选择偏航角度分布情况：',['分布在[-180,180],集中在0','分布在[0,360],集中在180'])
 site_instance.process_yaw_angle(method=yaw_angle_method)
 st.pyplot(site_instance.check_hist(site_instance.wtg_data,pn=site_instance.yaw_angle_pn))
@@ -240,3 +250,4 @@ for i,figs in enumerate(figure_list):
     # with col_ls[i%4]:
     st.pyplot(figs)
 st.write(table)
+

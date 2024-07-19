@@ -333,7 +333,7 @@ class wind_power_plant():
                 m1 = self.month_list.loc[i-1,self.month_pn]
                 m_data =  self.wtg_use[(self.wtg_use['month']==m1)|(self.wtg_use['month']==m2)].reset_index(drop=True)
                 title = f'{m1},{m2}月'
-                print(f'{m1},{m2}月数据大小为{m_data.shape}')
+                # print(f'{m1},{m2}月数据大小为{m_data.shape}')
                 if m_data.shape[0]==0:
                     continue
                 m_list.append(f'{m1},{m2}月')
@@ -344,12 +344,12 @@ class wind_power_plant():
                 title = f'{month}月'
             nrows = math.ceil(len(self.ls_use)/3)
             # print(nrows)
-            fig,axes = plt.subplots(nrows,3,figsize = (20,nrows*5+2))
+            fig,axes = plt.subplots(nrows,3,figsize = (20,nrows*5+5))
             mh_list = []
             
             for i,v in enumerate(self.ls_use):
                 v_data = m_data[m_data['wind_bin']==v].reset_index(drop=True)
-                print(f'v={v},vdata{m_data.shape}{v_data.shape}')
+                # print(f'v={v},vdata{m_data.shape}{v_data.shape}')
                 if if_rectify:
                     v_data['rectify_Power'] = (v/v_data[self.w_pn])**3*v_data[self.P_pn]
                 # print(f'数据大小为{v_data.shape}')
@@ -386,8 +386,10 @@ class wind_power_plant():
                     mh_list.append(np.NaN)
                 # print(mh_list)
             h_list.append(mh_list)
-            fig.suptitle(title,fontsize=20)
-            plt.tight_layout()
+            fig.tight_layout(pad=0.4, w_pad=0, h_pad=0.2)
+            fig.suptitle(title,fontsize=35)
+            plt.subplots_adjust(top=0.92)
+            # fig.tight_layout(pad=0.4, w_pad=0, h_pad=0)
             fig_list.append(fig)
             
             # plt.savefig(ROOT_PATH + f'{m}月.jpg',bbox_inches='tight',facecolor='white',dpi=500)
